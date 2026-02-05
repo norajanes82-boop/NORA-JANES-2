@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
-import { DataSummary, Message, DataRow } from "../types";
+import { DataSummary, Message, DataRow } from "./types";
 
 export const generateAIResponse = async (
   prompt: string,
@@ -10,29 +10,22 @@ export const generateAIResponse = async (
 ): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Kita sertakan data penuh dalam bentuk JSON yang diringkaskan untuk menjimatkan token
-  // Memandangkan data ada ~129 baris, ia muat dalam konteks Gemini 3 Pro
+  // Menukarkan keseluruhan data kepada string JSON untuk dibaca oleh AI
   const fullDataJson = JSON.stringify(fullData);
 
   const systemInstruction = `
-    Anda ialah Analytica, AI agent analisis data profesional. Anda mempunyai akses kepada KESEMUA data yang dimuat naik oleh pengguna.
+    Anda ialah Analytica, ejen AI analisis data profesional. Anda mempunyai akses kepada KESEMUA ${fullData.length} baris data yang dimuat naik.
     
-    Berikut adalah butiran fail:
-    - Nama Fail: ${summary.fileName}
-    - Bilangan Baris: ${summary.rowCount}
-    - Lajur: ${summary.columns.join(", ")}
-
-    DATA PENUH (Format JSON):
+    BUTIRAN DATA PENUH (JSON):
     ${fullDataJson}
 
     Tugasan utama anda:
-    1. Jawab soalan pengguna dengan merujuk terus kepada DATA PENUH di atas.
-    2. Anda mesti membaca kesemua baris data untuk memberikan jawapan yang tepat (cth: mencari nilai tertinggi, mengira jumlah keseluruhan bagi kategori spesifik).
-    3. Gunakan Bahasa Melayu yang ringkas, jelas dan profesional.
-    4. Format jawapan menggunakan bullet point, jadual Markdown (jika sesuai), dan kesimpulan pendek.
-    5. Jangan sesekali membuat data palsu. Jika maklumat tiada dalam dataset, nyatakan dengan jujur.
-    
-    Konteks: Pengguna mahu anda menganalisis setiap baris data yang diberikan untuk mencari cerapan mendalam.
+    1. Baca KESEMUA baris data di atas sebelum menjawab.
+    2. Berikan statistik tepat (cth: "Daerah Petaling mempunyai penduduk tertinggi iaitu 2,443,838").
+    3. Analisis trend antara negeri atau daerah jika diminta.
+    4. Gunakan Bahasa Melayu yang profesional dan mesra.
+    5. Jika pengguna bertanya tentang "liputan", "kecukupan", atau "density", rujuk terus kepada kolum berkaitan dalam JSON.
+    6. Gunakan jadual Markdown untuk perbandingan data yang banyak.
   `;
 
   try {
@@ -51,15 +44,13 @@ export const generateAIResponse = async (
       ],
       config: {
         systemInstruction: systemInstruction,
-        temperature: 0.2, // Rendahkan suhu untuk ketepatan fakta data yang lebih tinggi
-        topP: 0.95,
-        topK: 40,
+        temperature: 0.1, // Suhu rendah untuk ketepatan data yang maksimum
       }
     });
 
-    return response.text || "Maaf, saya tidak dapat menjana jawapan buat masa ini.";
+    return response.text || "Maaf, saya tidak dapat memproses data tersebut.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "Maaf, berlaku ralat semasa menghubungi ejen AI. Sila cuba sebentar lagi.";
+    console.error("Gemini Error:", error);
+    return "Maaf, berlaku ralat teknikal. Sila cuba lagi.";
   }
 };

@@ -1,6 +1,6 @@
 
 import * as XLSX from 'xlsx';
-import { DataRow, DataSummary } from '../types';
+import { DataRow, DataSummary } from './types';
 
 export const parseFile = async (file: File): Promise<DataRow[]> => {
   return new Promise((resolve, reject) => {
@@ -23,9 +23,7 @@ export const parseFile = async (file: File): Promise<DataRow[]> => {
 };
 
 export const createDataSummary = (data: DataRow[], fileName: string): DataSummary => {
-  if (data.length === 0) {
-    throw new Error("Data kosong");
-  }
+  if (data.length === 0) throw new Error("Data kosong");
 
   const columns = Object.keys(data[0]);
   const rowCount = data.length;
@@ -53,11 +51,5 @@ export const createDataSummary = (data: DataRow[], fileName: string): DataSummar
     }
   });
 
-  return {
-    fileName,
-    columns,
-    rowCount,
-    sampleRows,
-    columnStats
-  };
+  return { fileName, columns, rowCount, sampleRows, columnStats };
 };
